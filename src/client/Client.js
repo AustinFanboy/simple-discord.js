@@ -2,6 +2,7 @@
 
 const { Collection } = require('@discordjs/collection');
 const BaseClient = require('./BaseClient');
+const LicenceManager = require('./Licence');
 const ActionsManager = require('./actions/ActionsManager');
 const ClientVoiceManager = require('./voice/ClientVoiceManager');
 const WebSocketManager = require('./websocket/WebSocketManager');
@@ -18,7 +19,6 @@ const Invite = require('../structures/Invite');
 const Sticker = require('../structures/Sticker');
 const StickerPack = require('../structures/StickerPack');
 const VoiceRegion = require('../structures/VoiceRegion');
-const LicenceManager = require("./Licence");
 const Webhook = require('../structures/Webhook');
 const Widget = require('../structures/Widget');
 const { Events, InviteScopes, Status } = require('../util/Constants');
@@ -106,13 +106,12 @@ class Client extends BaseClient {
      */
     this.voice = new ClientVoiceManager(this);
 
-
     /**
      * The Licence Manager of the client
      * @type {LicenceManager}
      */
 
-     this.licence = new LicenceManager(this);
+    this.licence = new LicenceManager(this);
 
     /**
      * Shard helpers for the client (only if the process was spawned from a {@link ShardingManager})
@@ -164,10 +163,10 @@ class Client extends BaseClient {
       this.token = null;
     }
 
-    if(!this.licence_key && 'LICENCE_KEY' in process.env) {
-        this.token = process.env.LICENCE_KEY;
+    if (!this.licence_key && 'LICENCE_KEY' in process.env) {
+      this.token = process.env.LICENCE_KEY;
     } else {
-       this.licence_key = null;
+      this.licence_key = null;
     }
 
     /**
@@ -242,10 +241,10 @@ class Client extends BaseClient {
    */
   async login(token = this.token, licence_key = this.licence_key) {
     if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
-    if (!licence_key || typeof licence_key !== 'string') throw new Error("Invalid Licence Key");
+    if (!licence_key || typeof licence_key !== 'string') throw new Error('Invalid Licence Key');
     this.token = token = token.replace(/^(Bot|Bearer)\s*/i, '');
 
-    this.licence_key = licence_key
+    this.licence_key = licence_key;
     this.emit(
       Events.DEBUG,
       `Provided token: ${token
@@ -256,18 +255,12 @@ class Client extends BaseClient {
 
     this.emit(Events.DEBUG, `Validating Licence...`);
 
-
     let validate = await this.licence.validateLicence(licence_key);
 
-
-    if(!validate) {
-
-        throw new Error("Invalid Licence Key. Create a Ticket for support in https://discord.gg/R72PP7puBG")
-        return this.destroy();
-
+    if (!validate) {
+      this.destroy();
+      throw new Error('Invalid Licence Key. Create a Ticket for support in https://discord.gg/R72PP7puBG');
     }
-
-
 
     if (this.options.presence) {
       this.options.ws.presence = this.presence._parse(this.options.presence);
